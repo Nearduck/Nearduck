@@ -1,0 +1,220 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ground: #0b0806;
+  --color-deep: #06100f;
+  --color-panel: rgba(13, 11, 9, 0.9);
+  --color-card: #15110d;
+  --color-card-2: #1d1812;
+  --color-line: rgba(243, 234, 216, 0.1);
+  --color-line-2: rgba(243, 234, 216, 0.18);
+  --color-text: #f3ead8;
+  --color-muted: rgba(243, 234, 216, 0.72);
+  --color-dim: rgba(243, 234, 216, 0.5);
+  --color-mint: #00ec97;
+  --color-mint-ink: #063d2b;
+  --color-soil: #1c120c;
+  --color-duck: #ffd92e;
+  --color-beak: #f07a12;
+  --color-boot: #0e9a45;
+  --color-red: #ff6b5b;
+  --color-green: #00ec97;
+
+  --font-sans: var(--font-grotesk), "Space Grotesk", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-display: var(--font-archivo), "Archivo Black", Impact, "Arial Black", sans-serif;
+  --font-mono: var(--font-spacemono), "Space Mono", ui-monospace, Menlo, Consolas, monospace;
+  --font-inter: var(--font-inter-var), -apple-system, system-ui, Inter, "Segoe UI", Arial, sans-serif;
+
+  --animate-bob: bob 3.2s ease-in-out infinite;
+  --animate-pulse-dot: pulse-dot 1.8s ease-in-out infinite;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+::selection {
+  background: var(--color-mint);
+  color: var(--color-mint-ink);
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn-mint {
+    background: var(--color-mint);
+    color: var(--color-mint-ink);
+    box-shadow: 0 4px 0 #00a86b, 0 10px 30px -8px rgba(0, 236, 151, 0.55);
+  }
+  .btn-mint:hover {
+    background: #3cf5b3;
+  }
+  .btn-mint:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-ghost {
+    background: rgba(243, 234, 216, 0.06);
+    color: var(--color-text);
+    border: 1px solid var(--color-line-2);
+  }
+  .btn-ghost:hover {
+    border-color: rgba(0, 236, 151, 0.5);
+  }
+  .btn-soil {
+    background: var(--color-soil);
+    color: var(--color-text);
+    box-shadow: 0 4px 0 #000, 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+  }
+  .btn-soil:hover {
+    background: #2a1c12;
+  }
+  .btn-glass {
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--color-soil);
+    border: 2px solid var(--color-soil);
+    backdrop-filter: blur(6px);
+  }
+  .btn-glass:hover {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-mint);
+  }
+  .h-display {
+    font-family: var(--font-display);
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+  }
+  .panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: 40px;
+    box-shadow: 0 40px 120px -40px rgba(0, 0, 0, 0.9);
+  }
+  .tile {
+    background: rgba(243, 234, 216, 0.05);
+    border: 1px solid var(--color-line);
+    border-radius: 14px;
+  }
+  .depth-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid rgba(0, 236, 151, 0.3);
+    background: rgba(0, 20, 12, 0.6);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+}
+
+/* Deep water behind everything below the surface: murky green-black with
+   drifting specks, the pond version of packed earth. */
+.pond-bed {
+  background-color: #0a0d0b;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(160, 220, 190, 0.18) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 72% 42%, rgba(160, 220, 190, 0.14) 50%, transparent 51%),
+    radial-gradient(1px 1px at 38% 76%, rgba(160, 220, 190, 0.16) 50%, transparent 51%),
+    radial-gradient(2px 2px at 88% 88%, rgba(160, 220, 190, 0.1) 50%, transparent 51%),
+    radial-gradient(1px 1px at 55% 8%, rgba(160, 220, 190, 0.14) 50%, transparent 51%),
+    linear-gradient(180deg, #0f2a2a 0%, #0c1c1b 18%, #0a120f 45%, #080a08 100%);
+  background-size: 180px 180px, 240px 240px, 200px 200px, 320px 320px, 260px 260px, 100% 100%;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 236, 151, 0.6); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0, 236, 151, 0); }
+}
+@keyframes fly {
+  0% { transform: translateX(-10vw) translateY(0); }
+  50% { transform: translateX(50vw) translateY(-14px); }
+  100% { transform: translateX(110vw) translateY(0); }
+}
+@keyframes flap {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(-0.6); }
+}
+@keyframes drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-60px); }
+}
+@keyframes rise {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  15% { opacity: 0.8; }
+  100% { transform: translateY(-420px) scale(1.1); opacity: 0; }
+}
+@keyframes ripple {
+  0% { transform: scale(0.4); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes route-flow {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes glow {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.anim-paused,
+.anim-paused * {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
