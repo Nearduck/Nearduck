@@ -5,6 +5,10 @@
 Website for the Nearduck meme token: a duck in an armchair, parked near the water, waiting for the market to
 float by. Built with Next.js 16 (App Router), React 19, TypeScript and Tailwind CSS v4.
 
+Token contract on Robinhood Chain: `0x5d586587d8b5fa9067f8c9eb0af67286414b2ce0`
+([Blockscout](https://robinhoodchain.blockscout.com/token/0x5d586587d8b5fa9067f8c9eb0af67286414b2ce0) ·
+[chart on DEXTools](https://www.dextools.io/app/robinhood/pair-explorer/0x4c4bbf036442b7d8b5a0fd9faedc72d4b8d980eb)).
+
 ## Pages
 
 | Route    | What it is |
@@ -27,14 +31,15 @@ npm run start        # http://localhost:4670
 
 ## Change the contract address
 
-Everything reads the token identity from `src/config/brand.ts`. Replace the value of `CA`:
+Everything reads the token identity from `src/config/brand.ts`. To point the site at another token, replace the
+value of `CA`, and `CHART_PAIR` with the pair address DEXTools lists for it:
 
 ```ts
 const CA = "0x...";   // 0x + 40 hex characters
 ```
 
 The navbar pill, the footer, the entrance block, the swap panel and every explorer or chart link update from
-that one line. Until `CA` is a real address, token-only figures show "at launch".
+those lines. Until `CA` is a real address, token-only figures show "at launch".
 
 ## Environment variables (all optional)
 

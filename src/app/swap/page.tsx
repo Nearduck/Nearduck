@@ -4,7 +4,7 @@ import { BRAND, CHAIN } from "@/config/brand";
 
 export const metadata: Metadata = {
   title: "Enter the pond",
-  description: `Connect a wallet to ${CHAIN.name} and get ready for ${BRAND.symbol}. Swaps open at launch.`,
+  description: `Buy and sell ${BRAND.symbol} on ${CHAIN.name} with ETH, straight from its Pons launch.`,
 };
 
 export default function SwapPage() {

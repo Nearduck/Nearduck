@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BRAND } from "@/config/brand";
+import { BRAND, TOKEN } from "@/config/brand";
 import { DepthTag } from "@/components/home/ui";
 import { downloadSvgAsPng } from "@/lib/download";
 
-/** Assumed until the contract is live; shown on the page as an assumption. */
+/** Total supply of the token: 1B, confirmed on chain with totalSupply(). */
 const SUPPLY = 1_000_000_000;
 const CAPS = [1e6, 1e7, 1e8, 1e9];
 const BAGS = [1e6, 5e6, 1e7, 5e7];
@@ -73,7 +73,7 @@ export function Calculator() {
           launched yet, not a price target and not a promise.
         </p>
         <p className="mt-5 font-mono text-[11px] tracking-[0.16em] text-mint uppercase">
-          Scenario mode · supply assumed {short(SUPPLY)}
+          Scenario mode · supply {TOKEN.isLive ? "" : "assumed "}{short(SUPPLY)}
         </p>
 
         <div className="mt-6 flex gap-2">
@@ -149,7 +149,7 @@ export function Calculator() {
           </p>
         ) : null}
         <p className="mt-4 max-w-3xl text-xs leading-relaxed text-dim">
-          Supply is an assumption until the contract is published; the real figure replaces it at launch. Market caps
+          {TOKEN.isLive ? "Supply is the contract\u2019s total of 1B." : "Supply is an assumption until the contract is published; the real figure replaces it at launch."} Market caps
           are scenarios you pick, not forecasts. Nothing here is financial advice.
         </p>
 

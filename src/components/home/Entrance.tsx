@@ -30,8 +30,10 @@ export function Entrance() {
           <p className="eyebrow">Ways in</p>
           <h2 className="h-display mt-4 text-[44px] sm:text-[66px]">Never one pond.</h2>
           <p className="mt-5 max-w-md text-[17px] leading-relaxed text-muted">
-            Hold {BRAND.symbol} and you are sitting with the duck. Swaps open at launch; until then, set up your wallet
-            on {CHAIN.name} and keep the address below close.
+            Hold {BRAND.symbol} and you are sitting with the duck.{" "}
+            {TOKEN.isLive
+              ? `Swap with ETH on ${CHAIN.name} from the pond panel, and check the address below before every trade.`
+              : `Swaps open at launch; until then, set up your wallet on ${CHAIN.name} and keep the address below close.`}
           </p>
           <CopyCaBlock className="mt-6 max-w-md" />
           <ul className="mt-4 grid max-w-md grid-cols-1 gap-2.5 sm:grid-cols-2">

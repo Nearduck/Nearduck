@@ -3,7 +3,10 @@
 // navbar pill, the footer, the entrance block, the swap page and every
 // explorer link derive from it.
 
-const CA = "0xxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+const CA = "0x5d586587d8b5fa9067f8c9eb0af67286414b2ce0";
+// Pair the chart button opens on DEXTools: the token's Pons curve while it trades
+// there. After graduation, swap in the address of the pair DEXTools lists for the pool.
+const CHART_PAIR = "0x4c4bbf036442b7d8b5a0fd9faedc72d4b8d980eb";
 
 export const isAddress = (v: string): v is `0x${string}` =>
   /^0x[0-9a-fA-F]{40}$/.test(v);
@@ -58,8 +61,8 @@ export const TOKEN = {
     return isAddress(BRAND.ca) ? explorerToken(BRAND.ca) : null;
   },
   get chartUrl() {
-    return isAddress(BRAND.ca)
-      ? `https://dexscreener.com/robinhood/${BRAND.ca}`
+    return isAddress(BRAND.ca) && isAddress(CHART_PAIR)
+      ? `https://www.dextools.io/app/robinhood/pair-explorer/${CHART_PAIR}`
       : null;
   },
 };

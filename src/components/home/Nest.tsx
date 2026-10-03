@@ -1,13 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { CHAIN, TOKEN } from "@/config/brand";
+import { useEffect, useState } from "react";
+import { BRAND, CHAIN, TOKEN } from "@/config/brand";
+import { loadMarket, type Market } from "@/lib/pons";
 import { NestArt } from "@/components/art/Scenes";
 import { DepthTag, Stat } from "@/components/home/ui";
 import { fmt, useAgo, useChainPulse } from "@/lib/chain";
 
+const SUPPLY = 1_000_000_000; // totalSupply() of the token, 18 decimals
+
+/** Curve or pool state of the token, re-read every 30 s once the CA is live. */
+function useTokenMarket() {
+  const [market, setMarket] = useState<Market | null>(null);
+  useEffect(() => {
+    if (!TOKEN.isLive) return;
+    let cancelled = false;
+    const load = () => loadMarket(BRAND.ca).then((m) => !cancelled && setMarket(m)).catch(() => {});
+    load();
+    const t = window.setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+    };
+  }, []);
+  return market;
+}
+
 export function Nest() {
   const p = useChainPulse();
+  const market = useTokenMarket();
+  // Spot price on the curve is quote reserve over token reserve (virtual reserves included).
+  const priceEth =
+    market && market.venue === "curve" && market.tokenReserve > 0n
+      ? Number((market.quoteReserve * 10n ** 18n) / market.tokenReserve) / 1e18
+      : null;
+  const mcap = priceEth !== null && p.ethUsd ? priceEth * SUPPLY * p.ethUsd : null;
+  const money = (n: number) =>
+    n >= 1e6 ? `$${fmt(n / 1e6, 2)}M` : n >= 1e3 ? `$${fmt(n / 1e3, 1)}K` : `$${fmt(n, 0)}`;
   const ago = useAgo(p.updatedAt);
   const blockAgo = useAgo(p.timestamp ? p.timestamp * 1000 : null);
   const usd = (eth: number | null) => (eth !== null && p.ethUsd ? `≈ $${fmt(eth * p.ethUsd, 4)}` : "");
@@ -29,7 +59,8 @@ export function Nest() {
           <h2 className="h-display mt-4 text-[44px] sm:text-[66px]">Every block floats past the chair.</h2>
           <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-muted">
             {CHAIN.name} keeps making blocks whether the duck is awake or not. Everything below is read straight from
-            the chain&apos;s public RPC. No middleman, no made-up numbers, and no token figures until the token exists.
+            the chain&apos;s public RPC. No middleman and no made-up numbers
+            {TOKEN.isLive ? `; ${BRAND.symbol} figures come from its Pons curve.` : ", and no token figures until the token exists."}
           </p>
 
           <div className="mt-7 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -38,12 +69,29 @@ export function Nest() {
             <Stat label="Gas price" value={p.gasGwei === null ? "—" : `${fmt(p.gasGwei, 4)} gwei`} />
             <Stat label="Block time" value={p.blockTime === null ? "—" : `${fmt(p.blockTime, 2)} s`} />
             <Stat label="ETH price" value={p.ethUsd ? `$${fmt(p.ethUsd, 2)}` : "—"} />
-            <Stat label="Market cap" value="At launch" />
-            <Stat label="Holders" value="At launch" />
+            <Stat
+              label={TOKEN.isLive ? "Fully diluted" : "Market cap"}
+              value={!TOKEN.isLive ? "At launch" : mcap !== null ? `≈ ${money(mcap)}` : market?.venue === "pool" ? "On chart" : "—"}
+              testId="stat-mcap"
+            />
+            <Stat
+              label="To graduation"
+              value={
+                !TOKEN.isLive
+                  ? "At launch"
+                  : market?.venue === "curve" && market.progress !== null
+                    ? `${fmt(market.progress * 100, 1)}%`
+                    : market && market.venue !== "unavailable"
+                      ? "Graduated"
+                      : "—"
+              }
+            />
           </div>
           <p className="mt-4 font-mono text-xs text-dim">Live · updated {ago}</p>
           <p className="mt-2 font-mono text-xs leading-relaxed text-dim">
-            Read from {CHAIN.name} RPC{p.ethUsd ? ", ETH/USD from a public exchange feed" : ""}. {TOKEN.isLive ? "" : "Token stats appear once the contract is live."}
+            Read from {CHAIN.name} RPC{p.ethUsd ? ", ETH/USD from a public exchange feed" : ""}. {TOKEN.isLive
+              ? "Fully diluted value = Pons curve spot price × 1B supply × ETH/USD; graduation progress is the curve\u2019s own count."
+              : "Token stats appear once the contract is live."}
           </p>
 
           <div className="mt-7 rounded-2xl border border-line bg-black/40 p-5">
