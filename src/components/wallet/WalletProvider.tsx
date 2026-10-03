@@ -62,6 +62,10 @@ type WalletState = {
   /** Resolves true once an account is shared, whatever the network. */
   connect: (wallet: DiscoveredWallet) => Promise<boolean>;
   switchNetwork: () => Promise<void>;
+  /** Sends a transaction from the connected account and resolves its hash. */
+  sendTransaction: (tx: { to: string; data: string; value?: bigint }) => Promise<string>;
+  /** Re-reads the ETH balance now instead of waiting for the next poll. */
+  refreshBalance: () => void;
   disconnect: () => void;
   clearError: () => void;
 };
@@ -311,6 +315,29 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
   }, [active, moveToRobinhood]);
 
+  const sendTransaction = useCallback(
+    async (tx: { to: string; data: string; value?: bigint }) => {
+      if (!active || !remembered) throw new Error("Connect a wallet first.");
+      if ((await readChainId(active.provider)) !== chain.id) throw new Error(`Switch the wallet to ${chain.name} first.`);
+      try {
+        return (await active.provider.request({
+          method: "eth_sendTransaction",
+          params: [
+            {
+              from: remembered.address,
+              to: tx.to,
+              data: tx.data,
+              ...(tx.value ? { value: `0x${tx.value.toString(16)}` } : {}),
+            },
+          ],
+        })) as string;
+      } catch (cause) {
+        throw new Error(describe(cause, "The wallet did not send the transaction."));
+      }
+    },
+    [active, remembered],
+  );
+
   const disconnect = useCallback(() => {
     // Wallets that support it drop the site's permission too, so the next
     // connect asks again instead of reconnecting silently.
@@ -333,6 +360,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // Balance comes from the chain's RPC, not the wallet, so it is the
   // Robinhood Chain balance whatever network the wallet is pointed at.
   const [balance, setBalance] = useState<string | null>(null);
+  const [balanceTick, setBalanceTick] = useState(0);
+  const refreshBalance = useCallback(() => setBalanceTick((n) => n + 1), []);
   useEffect(() => {
     if (!address) return;
     let cancelled = false;
@@ -351,7 +380,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       window.clearInterval(timer);
       setBalance(null);
     };
-  }, [address, chainId]);
+  }, [address, chainId, balanceTick]);
 
   const value = useMemo(
     () => ({
@@ -366,6 +395,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       error,
       connect,
       switchNetwork,
+      sendTransaction,
+      refreshBalance,
       disconnect,
       clearError,
     }),
@@ -380,6 +411,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       error,
       connect,
       switchNetwork,
+      sendTransaction,
+      refreshBalance,
       disconnect,
       clearError,
     ],

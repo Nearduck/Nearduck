@@ -8,7 +8,7 @@ import { shortAddress } from "@/config/brand";
 
 /** Floating action bar on phones, as in the reference layout. */
 export function MobileDock() {
-  const { copied, copy } = useCopyCa();
+  const { copied, copy, live } = useCopyCa();
   const { address } = useWallet();
   const { open } = useWalletModal();
   return (
@@ -23,12 +23,19 @@ export function MobileDock() {
         <Link href="/memes" className="px-1.5 font-mono text-[10px] tracking-[0.1em] text-muted uppercase">
           Memes
         </Link>
-        <button type="button" onClick={copy} className="cursor-pointer px-1.5 font-mono text-[10px] tracking-[0.1em] text-muted uppercase" data-testid="dock-copy">
-          {copied ? <span className="text-mint">Copied</span> : "Copy CA"}
+        <button type="button" onClick={copy} disabled={!live} className="cursor-pointer px-1.5 disabled:cursor-default disabled:opacity-50 font-mono text-[10px] tracking-[0.1em] text-muted uppercase" data-testid="dock-copy">
+          {!live ? "CA soon" : copied ? <span className="text-mint">Copied</span> : "Copy CA"}
         </button>
-        <button type="button" onClick={open} className="btn btn-mint h-9 px-3.5 font-mono text-[10px] tracking-[0.12em] uppercase">
-          {address ? shortAddress(address, 4, 3) : "Enter"}
-        </button>
+        {address ? (
+          // Already connected: go to the wallet panel instead of reopening the connect list.
+          <Link href="/swap" className="btn btn-mint h-9 px-3.5 font-mono text-[10px] tracking-[0.12em] uppercase">
+            {shortAddress(address, 4, 3)}
+          </Link>
+        ) : (
+          <button type="button" onClick={open} className="btn btn-mint h-9 px-3.5 font-mono text-[10px] tracking-[0.12em] uppercase">
+            Enter
+          </button>
+        )}
       </div>
     </div>
   );

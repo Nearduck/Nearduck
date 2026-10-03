@@ -18,11 +18,25 @@ const money = (n: number) =>
   n >= 100 ? `$${Math.round(n).toLocaleString("en-US")}` : `$${n.toLocaleString("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 const num = (n: number, d = 0) => n.toLocaleString("en-US", { maximumFractionDigits: d });
 
+/** Keeps digits and the first decimal point, so "12." survives while typing. */
+const clean = (v: string) => {
+  const s = v.replace(/[^0-9.]/g, "");
+  const dot = s.indexOf(".");
+  return dot < 0 ? s : `${s.slice(0, dot + 1)}${s.slice(dot + 1).replace(/\./g, "")}`;
+};
+/** Groups the whole part with commas and leaves the typed fraction alone. */
+const grouped = (v: string) => {
+  const [whole, fraction] = v.split(".");
+  const head = whole === "" ? (fraction !== undefined ? "0" : "") : Number(whole).toLocaleString("en-US");
+  return fraction === undefined ? head : `${head}.${fraction}`;
+};
+
 export function Calculator() {
   const [unit, setUnit] = useState<"token" | "usd">("token");
   const [raw, setRaw] = useState("10000000");
   const [cap, setCap] = useState(1e7);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const r = useMemo(() => {
     const value = Math.max(0, Number(raw.replace(/[^0-9.]/g, "")) || 0);
@@ -35,9 +49,12 @@ export function Calculator() {
 
   const download = async () => {
     setBusy(true);
+    setFailed(false);
     try {
       const out = await downloadSvgAsPng("float-card", `nearduck-float-card.png`, 1200);
       out.save();
+    } catch {
+      setFailed(true);
     } finally {
       setBusy(false);
     }
@@ -80,8 +97,8 @@ export function Calculator() {
           <span className="w-24 shrink-0 text-sm leading-tight text-muted">Enter what you hold</span>
           <input
             inputMode="decimal"
-            value={raw === "" ? "" : num(Number(raw) || 0, 2)}
-            onChange={(e) => setRaw(e.target.value.replace(/[^0-9.]/g, ""))}
+            value={grouped(raw)}
+            onChange={(e) => setRaw(clean(e.target.value))}
             className="min-w-0 flex-1 bg-transparent font-mono text-2xl text-text outline-none"
             aria-label={unit === "token" ? `Amount of ${BRAND.ticker}` : "Amount in USD"}
             data-testid="calc-input"
@@ -126,6 +143,11 @@ export function Calculator() {
         <button type="button" onClick={download} disabled={busy} className="btn btn-mint mt-6 h-12 px-6 text-[15px]">
           {busy ? "Drawing…" : "Download float card"}
         </button>
+        {failed ? (
+          <p role="alert" className="mt-3 font-mono text-xs text-red">
+            The card could not be drawn in this browser. Try again, or take a screenshot of the numbers above.
+          </p>
+        ) : null}
         <p className="mt-4 max-w-3xl text-xs leading-relaxed text-dim">
           Supply is an assumption until the contract is published; the real figure replaces it at launch. Market caps
           are scenarios you pick, not forecasts. Nothing here is financial advice.

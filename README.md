@@ -10,7 +10,7 @@ float by. Built with Next.js 16 (App Router), React 19, TypeScript and Tailwind 
 | Route    | What it is |
 | -------- | ---------- |
 | `/`      | Landing page that "dives" through the pond: hero, dispatch, live chain stats (the nest), three steps, float calculator, the flock, the map, ways in. A depth meter in the header and a side rail follow the scroll. |
-| `/swap`  | Wallet panel. Connects any EIP-6963 browser wallet, adds/switches to Robinhood Chain and shows the real ETH balance. Swaps open at launch. Includes a short guided tour. |
+| `/swap`  | Swap panel. Connects any EIP-6963 browser wallet and adds/switches to Robinhood Chain. Once the contract address is set, buys and sells $NEARDUCK with ETH: through its Pons V2 bonding curve before graduation, and through its Uniswap v4 pool after. Quotes come from the chain, with selectable slippage. Includes a short guided tour. |
 | `/memes` | Meme stash: searchable, filterable, every meme downloads as a PNG (share sheet on phones). |
 | `/api/eth-price` | ETH/USD from a public exchange feed, cached for 60 seconds. |
 

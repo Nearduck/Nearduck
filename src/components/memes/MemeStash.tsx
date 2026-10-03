@@ -9,10 +9,9 @@ import { MarkBadge } from "@/components/Mark";
 import { CopyCaPill } from "@/components/CopyCa";
 import { MemeArt } from "@/components/art/MemeArt";
 import { useWallet } from "@/components/wallet/WalletProvider";
-import { useWalletModal } from "@/components/wallet/WalletButton";
+import { NavWallet, useWalletModal } from "@/components/wallet/WalletButton";
 import { CATEGORIES, EMOJI, MEMES, type Meme, type MemeCategory } from "@/data/memes";
 import { downloadSvgAsPng } from "@/lib/download";
-import { shortAddress } from "@/config/brand";
 
 async function saveMeme(meme: Meme, svgId: string, share: boolean) {
   const out = await downloadSvgAsPng(svgId, `nearduck-${meme.id}.png`);
@@ -35,6 +34,7 @@ export function MemeStash() {
   const [filter, setFilter] = useState<MemeCategory | "all">("all");
   const [query, setQuery] = useState("");
   const [openMeme, setOpenMeme] = useState<Meme | null>(null);
+  const [failedId, setFailedId] = useState<string | null>(null);
   const touch = useSyncExternalStore(
     () => () => {},
     () => window.matchMedia("(pointer: coarse)").matches,
@@ -69,14 +69,18 @@ export function MemeStash() {
             <Link href="/" className="hidden text-[13px] font-semibold text-white/45 hover:text-white sm:inline">
               Main site
             </Link>
-            <button
-              type="button"
-              onClick={open}
-              className="h-8 cursor-pointer rounded-lg border border-white/15 px-3 text-xs font-bold tracking-[0.06em] text-white/60 uppercase hover:text-white"
-              data-testid="pond-access"
-            >
-              {address ? shortAddress(address, 4, 4) : "Pond access"}
-            </button>
+            {address ? (
+              <NavWallet compact />
+            ) : (
+              <button
+                type="button"
+                onClick={open}
+                className="h-8 cursor-pointer rounded-lg border border-white/15 px-3 text-xs font-bold tracking-[0.06em] text-white/60 uppercase hover:text-white"
+                data-testid="pond-access"
+              >
+                Pond access
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -162,12 +166,20 @@ export function MemeStash() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => saveMeme(m, `meme-${m.id}`, false)}
+                  onClick={() => {
+                    setFailedId(null);
+                    saveMeme(m, `meme-${m.id}`, false).catch(() => setFailedId(m.id));
+                  }}
                   className="h-8 shrink-0 cursor-pointer rounded-[7px] bg-[#00e676] px-3 text-xs font-black text-black uppercase hover:brightness-110"
                 >
-                  ↓ Download
+                  {failedId === m.id ? "Retry" : "↓ Download"}
                 </button>
               </div>
+              {failedId === m.id ? (
+                <p role="alert" className="px-3 pb-3 text-xs text-[#ff6b6b]">
+                  This browser could not draw the image. Press and hold the picture to save it instead.
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -196,6 +208,7 @@ export function MemeStash() {
 
 function MemeModal({ meme, onClose }: { meme: Meme; onClose: () => void }) {
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -224,15 +237,18 @@ function MemeModal({ meme, onClose }: { meme: Meme; onClose: () => void }) {
           disabled={busy}
           onClick={async () => {
             setBusy(true);
+            setFailed(false);
             try {
               await saveMeme(meme, `meme-${meme.id}-modal`, true);
+            } catch {
+              setFailed(true);
             } finally {
               setBusy(false);
             }
           }}
           className="absolute right-3 bottom-3 h-9 cursor-pointer rounded-[7px] bg-[#00e676] px-4 text-xs font-black text-black uppercase"
         >
-          {busy ? "Saving…" : "↓ Save to phone"}
+          {busy ? "Saving…" : failed ? "Failed · retry" : "↓ Save to phone"}
         </button>
       </div>
     </div>,

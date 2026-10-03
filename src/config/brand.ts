@@ -64,6 +64,22 @@ export const TOKEN = {
   },
 };
 
+/**
+ * Pons V2 launchpad and the Uniswap v4 contracts its graduated pools trade on.
+ * Every address was checked with eth_getCode on Robinhood Chain mainnet.
+ * The token trades on its Pons bonding curve until it graduates, then in a
+ * v4 pool keyed (ETH, token, fee, tickSpacing, memeHook).
+ */
+export const PONS = {
+  factory: "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e",
+  memeHook: "0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044",
+  v4Quoter: "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
+  universalRouter: "0x8876789976dEcBfCbBbe364623C63652db8C0904",
+  permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+  /** Public launch page for a token. */
+  page: (token: string) => `https://www.ponsfamily.com/launchpad/${token}`,
+} as const;
+
 export function explorerAddress(address: string) {
   return `${CHAIN.explorer}/address/${address}`;
 }
