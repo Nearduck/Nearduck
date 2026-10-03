@@ -19,3 +19,6 @@ next-env.d.ts
 
 # source artwork for npm run brand (kept outside git)
 /brand-source/
+
+# local chat data (Redis is used in production)
+.chat-data.json

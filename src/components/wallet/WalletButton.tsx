@@ -8,19 +8,23 @@ import {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
+  ArrowLeftRight,
   Check,
   ChevronDown,
   Copy,
   ExternalLink,
   LogOut,
+  MessageCircle,
   TriangleAlert,
   Wallet,
   X,
 } from "lucide-react";
 import { BRAND, CHAIN as chain, explorerAddress, shortAddress } from "@/config/brand";
-import { useWallet } from "@/components/wallet/WalletProvider";
+import { WALLETCONNECT_RDNS, useWallet, type DiscoveredWallet } from "@/components/wallet/WalletProvider";
+import { WALLET_CATALOG, catalogIcon } from "@/config/wallets";
 
 /* ------------------------------------------------------------------ */
 /* One dialog for the whole site. Every "connect" / "get access" button */
@@ -46,8 +50,19 @@ export function useWalletModal() {
   return context;
 }
 
+const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+function WalletIcon({ src }: { src: string | null }) {
+  return src ? (
+    <img src={src} alt="" width={28} height={28} className="size-7 shrink-0 rounded-lg" />
+  ) : (
+    <Wallet className="size-7 shrink-0 rounded-lg bg-white/10 p-1 text-mint" />
+  );
+}
+
 function WalletDialog({ onClose }: { onClose: () => void }) {
   const { wallets, connect, connecting, error, clearError } = useWallet();
+  const [pending, setPending] = useState<string | null>(null);
 
   const close = useCallback(() => {
     onClose();
@@ -69,6 +84,26 @@ function WalletDialog({ onClose }: { onClose: () => void }) {
     };
   }, [close]);
 
+  const installed = wallets
+    .filter((w) => w.rdns !== WALLETCONNECT_RDNS)
+    .sort((a, b) => Number(Boolean(a.unsupported)) - Number(Boolean(b.unsupported)));
+  const walletConnect = wallets.find((w) => w.rdns === WALLETCONNECT_RDNS) ?? null;
+  const detected = new Set(wallets.map((w) => w.rdns));
+  const more = WALLET_CATALOG.filter((c) => !c.rdns.some((r) => detected.has(r)));
+  const mobile = isMobile();
+  const here = window.location.href;
+
+  async function pick(wallet: DiscoveredWallet) {
+    setPending(wallet.rdns);
+    const ok = await connect(wallet);
+    setPending(null);
+    if (ok) onClose();
+  }
+
+  const row =
+    "flex w-full items-center gap-3 rounded-xl border border-line bg-ground px-3.5 py-3 text-left font-mono text-sm";
+  const heading = "px-1 pb-2 font-mono text-[10px] tracking-[0.2em] text-dim uppercase";
+
   // The header blurs what is behind it, and a backdrop filter turns it into
   // the containing block for fixed children. Rendered in place, the dialog
   // would be clipped to the header, so it always goes to <body>.
@@ -80,7 +115,7 @@ function WalletDialog({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-4"
     >
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={close} />
-      <div className="relative w-full max-w-sm overflow-hidden rounded-t-3xl border border-line bg-card shadow-2xl sm:rounded-3xl">
+      <div className="relative flex max-h-[92dvh] w-full max-w-sm flex-col overflow-hidden rounded-t-3xl border border-line bg-card shadow-2xl sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <h2 id="wallet-dialog-title" className="font-mono text-xs tracking-[0.25em] text-text uppercase">
             <span className="text-mint">●</span> Connect wallet
@@ -96,48 +131,98 @@ function WalletDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <p className="px-5 pt-4 font-mono text-[11px] leading-relaxed text-muted">
-          Connecting shares your address with {BRAND.name} on {chain.name}. It
-          never asks for a signature and no key leaves your wallet.
+          Any EVM wallet that can add a custom network works on {chain.name}. Connecting only shares your address;
+          signatures and swaps are asked for separately.
         </p>
 
-        <ul className="flex flex-col gap-2 p-4">
-          {wallets.length === 0 ? (
-            <li className="rounded-xl border border-dashed border-line bg-ground px-4 py-6 text-center font-mono text-[11px] leading-relaxed text-muted">
-              <span className="mb-2 block tracking-[0.25em] text-mint uppercase">No wallet detected</span>
-              No browser wallet announced itself. Install or unlock one, such
-              as MetaMask or Rabby, then reopen this panel.
-            </li>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-2">
+          {installed.length ? (
+            <>
+              <p className={heading}>Detected in this browser</p>
+              <ul className="flex flex-col gap-2">
+                {installed.map((wallet) => (
+                  <li key={wallet.rdns}>
+                    <button
+                      type="button"
+                      disabled={connecting || Boolean(wallet.unsupported)}
+                      onClick={() => pick(wallet)}
+                      className={`${row} cursor-pointer transition-colors enabled:hover:border-mint/50 enabled:hover:bg-card-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      <WalletIcon src={wallet.icon || catalogIcon(wallet.rdns)} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block">{wallet.name}</span>
+                        <span className="block text-[10px] text-dim">
+                          {wallet.unsupported ? `Not supported · ${wallet.unsupported}` : "Installed"}
+                        </span>
+                      </span>
+                      {pending === wallet.rdns ? (
+                        <span className="text-[10px] tracking-widest text-dim uppercase">Check wallet</span>
+                      ) : null}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : null}
-          {wallets.map((wallet) => (
-            <li key={wallet.rdns}>
-              <button
-                type="button"
-                disabled={connecting || Boolean(wallet.unsupported)}
-                onClick={async () => {
-                  if (await connect(wallet)) onClose();
-                }}
-                className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-line bg-ground px-3.5 py-3 text-left font-mono text-sm transition-colors enabled:hover:border-mint/50 enabled:hover:bg-card-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {wallet.icon ? (
-                  <img src={wallet.icon} alt="" className="size-6" />
-                ) : (
-                  <Wallet className="size-6 p-0.5 text-mint" />
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className="block">{wallet.name}</span>
-                  {wallet.unsupported ? (
-                    <span className="block text-[10px] text-dim">
-                      Not supported · {wallet.unsupported}
-                    </span>
-                  ) : null}
-                </span>
-                {connecting ? (
-                  <span className="text-[10px] tracking-widest text-dim uppercase">Check wallet</span>
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ul>
+
+          <p className={`${heading} pt-4`}>Mobile and other wallets</p>
+          {walletConnect ? (
+            <button
+              type="button"
+              disabled={connecting}
+              onClick={() => pick(walletConnect)}
+              className={`${row} cursor-pointer transition-colors enabled:hover:border-mint/50 enabled:hover:bg-card-2 disabled:opacity-50`}
+              data-testid="wallet-walletconnect"
+            >
+              <WalletIcon src="/wallets/walletconnect.webp" />
+              <span className="min-w-0 flex-1">
+                <span className="block">WalletConnect</span>
+                <span className="block text-[10px] text-dim">Scan a QR code with a mobile wallet</span>
+              </span>
+              {pending === WALLETCONNECT_RDNS ? (
+                <span className="text-[10px] tracking-widest text-dim uppercase">Opening</span>
+              ) : null}
+            </button>
+          ) : (
+            <div className={`${row} opacity-50`} data-testid="wallet-walletconnect">
+              <WalletIcon src="/wallets/walletconnect.webp" />
+              <span className="min-w-0 flex-1">
+                <span className="block">WalletConnect</span>
+                <span className="block text-[10px] text-dim">Not configured on this site yet</span>
+              </span>
+            </div>
+          )}
+
+          {more.length ? (
+            <>
+              <p className={`${heading} pt-4`}>
+                {mobile ? "Open this site in a wallet app" : `Not installed · supports ${chain.name}`}
+              </p>
+              <ul className="flex flex-col gap-2">
+                {more.map((w) => {
+                  const href = mobile && w.deepLink ? w.deepLink(here) : w.install;
+                  const label = mobile && w.deepLink ? "Open" : "Install";
+                  return (
+                    <li key={w.id}>
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`${row} transition-colors hover:border-mint/50 hover:bg-card-2`}
+                      >
+                        <WalletIcon src={`/wallets/${w.id}.webp`} />
+                        <span className="min-w-0 flex-1">{w.name}</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] tracking-widest text-mint uppercase">
+                          {label} <ExternalLink className="size-3" />
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : null}
+        </div>
 
         {error ? (
           <p className="flex items-start gap-2 border-t border-line px-5 py-3 font-mono text-[11px] leading-relaxed text-red">
@@ -146,8 +231,8 @@ function WalletDialog({ onClose }: { onClose: () => void }) {
           </p>
         ) : null}
 
-        <p className="border-t border-line px-5 py-3 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">
-          Network · {chain.name} · id {chain.id}
+        <p className="border-t border-line px-5 py-3 font-mono text-[10px] tracking-[0.15em] text-dim uppercase">
+          {chain.name} · chain id {chain.id} · added to your wallet on connect
         </p>
       </div>
     </div>,
@@ -309,6 +394,24 @@ function AccountMenu({ compact }: { compact: boolean }) {
                   {copied ? <Check className="size-3.5 text-mint" /> : <Copy className="size-3.5" />}
                   {copied ? "Copied" : "Copy address"}
                 </button>
+                <Link
+                  role="menuitem"
+                  href="/chat"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 px-2.5 py-2 text-muted transition-colors hover:bg-card-2 hover:text-text"
+                >
+                  <MessageCircle className="size-3.5" />
+                  Open {BRAND.symbol} chat
+                </Link>
+                <Link
+                  role="menuitem"
+                  href="/swap"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 px-2.5 py-2 text-muted transition-colors hover:bg-card-2 hover:text-text"
+                >
+                  <ArrowLeftRight className="size-3.5" />
+                  Open swap
+                </Link>
                 <a
                   role="menuitem"
                   href={explorerAddress(address)}
@@ -358,12 +461,12 @@ export function AccessButton({ className = "" }: { className?: string }) {
   }
   if (address) {
     return (
-      <a href="/swap" className={`btn btn-mint ${className}`}>
+      <Link href="/swap" className={`btn btn-mint ${className}`}>
         <span>
           Wallet linked · <span className="normal-case">{shortAddress(address, 4, 4)}</span>
         </span>
         <span aria-hidden="true">→</span>
-      </a>
+      </Link>
     );
   }
   return (

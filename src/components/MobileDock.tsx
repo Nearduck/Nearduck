@@ -17,8 +17,8 @@ export function MobileDock() {
         <Link href="/swap" className="btn btn-mint h-9 px-3.5 font-mono text-[10px] tracking-[0.12em] uppercase">
           Buy
         </Link>
-        <Link href="/#calculator" className="px-1.5 font-mono text-[10px] tracking-[0.1em] text-muted uppercase">
-          Calc
+        <Link href="/chat" className="px-1.5 font-mono text-[10px] tracking-[0.1em] text-muted uppercase">
+          Chat
         </Link>
         <Link href="/memes" className="px-1.5 font-mono text-[10px] tracking-[0.1em] text-muted uppercase">
           Memes

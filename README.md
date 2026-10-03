@@ -15,6 +15,7 @@ Token contract on Robinhood Chain: `0x5d586587d8b5fa9067f8c9eb0af67286414b2ce0`
 | -------- | ---------- |
 | `/`      | Landing page that "dives" through the pond: hero, dispatch, live chain stats (the nest), three steps, float calculator, the flock, the map, ways in. A depth meter in the header and a side rail follow the scroll. |
 | `/swap`  | Swap panel. Connects any EIP-6963 browser wallet and adds/switches to Robinhood Chain. Once the contract address is set, buys and sells $NEARDUCK with ETH: through its Pons V2 bonding curve before graduation, and through its Uniswap v4 pool after. Quotes come from the chain, with selectable slippage. Includes a short guided tour. |
+| `/chat`  | $NEARDUCK CHAT: wallet-only group chat with a holders-only group. Connect with a browser wallet or WalletConnect. |
 | `/memes` | Meme stash: searchable, filterable, every meme downloads as a PNG (share sheet on phones). |
 | `/api/eth-price` | ETH/USD from a public exchange feed, cached for 60 seconds. |
 
@@ -53,6 +54,23 @@ Robinhood Chain endpoint), set:
 
 Locally, put them in `.env.local`; on Vercel, add them under Project Settings → Environment Variables and
 redeploy. If an endpoint fails, reads fall back to `https://robinhood-rpc.publicnode.com`.
+
+### $NEARDUCK CHAT and WalletConnect
+
+`/chat` is a wallet-only group chat (The Pond, Price & Chart, Meme Lab, and Holders' Nest for wallets holding the
+token). A visitor connects a wallet and signs one free message; the server recovers the signer and opens a 7-day
+session in an httpOnly cookie. Messages and sessions live in Redis (a `redis://` URL, or Upstash's REST API).
+
+| Name | Needed for | Format |
+| ---- | ---------- | ------ |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect (QR / mobile wallets) | 32-character project id from cloud.reown.com |
+| `KV_REDIS_URL` or `REDIS_URL` | Chat storage | `redis://` or `rediss://` URL, added by Vercel → Storage → Redis |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Chat storage | `https://<name>.upstash.io` and its REST token |
+| `KV_REST_API_URL` + `KV_REST_API_TOKEN` | Chat storage (alternative) | Added automatically by Vercel → Storage → Upstash Redis |
+
+Without a WalletConnect id the option reads "Not configured on this site yet" and browser wallets still work.
+Without Redis, `npm start` on your machine keeps the chat in memory and in `.chat-data.json` (git-ignored), and a
+Vercel deployment shows "The chat is not open yet" instead of losing messages between functions.
 
 ## Network
 

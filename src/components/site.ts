@@ -18,6 +18,7 @@ export const NAV = [
   { href: "/#map", label: "The map" },
   { href: "/#entrance", label: "Ways in" },
   { href: "/memes", label: "Memes" },
+  { href: "/chat", label: "Chat" },
 ] as const;
 
 export const LINKS = {

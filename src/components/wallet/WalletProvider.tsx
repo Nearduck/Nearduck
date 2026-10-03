@@ -9,16 +9,20 @@ import {
   useState,
 } from "react";
 import { CHAIN as chain } from "@/config/brand";
+import { WALLETCONNECT_PROJECT_ID } from "@/config/wallets";
 import { useLocalStore } from "@/components/wallet/useLocalStore";
+import { walletConnectProvider } from "@/components/wallet/walletconnect";
 import { formatEth, rpc } from "@/lib/rpc";
 
 /**
- * Wallet connection over EIP-6963. Connecting shares an address and reports
- * which network the wallet is pointed at. Nothing here asks for a signature
- * and no key ever reaches this application.
+ * Wallet connection over EIP-6963 browser wallets and WalletConnect.
+ * Connecting shares an address and reports which network the wallet is
+ * pointed at. Signatures (chat sign-in) and transactions (swaps) are only
+ * requested when the visitor asks for them; no key ever reaches this site.
  */
 
 export const ROBINHOOD_CHAIN_ID = chain.id;
+export const WALLETCONNECT_RDNS = "walletconnect";
 const CHAIN_ID_HEX = `0x${chain.id.toString(16)}`;
 
 type Eip1193Provider = {
@@ -64,6 +68,8 @@ type WalletState = {
   switchNetwork: () => Promise<void>;
   /** Sends a transaction from the connected account and resolves its hash. */
   sendTransaction: (tx: { to: string; data: string; value?: bigint }) => Promise<string>;
+  /** personal_sign of a plain-text message by the connected account. */
+  signMessage: (message: string) => Promise<string>;
   /** Re-reads the ETH balance now instead of waiting for the next poll. */
   refreshBalance: () => void;
   disconnect: () => void;
@@ -135,15 +141,29 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("eip6963:announceProvider", onAnnounce);
     window.dispatchEvent(new Event("eip6963:requestProvider"));
 
+    // WalletConnect reaches mobile and desktop wallets over a QR code. Its SDK
+    // loads on first use, so listing it here costs nothing.
+    if (WALLETCONNECT_PROJECT_ID) {
+      add({
+        uuid: WALLETCONNECT_RDNS,
+        rdns: WALLETCONNECT_RDNS,
+        name: "WalletConnect",
+        icon: "/wallets/walletconnect.webp",
+        provider: walletConnectProvider,
+        unsupported: null,
+      });
+    }
+
     // Older wallets only inject `window.ethereum`. Offer it when nothing
     // announced itself, so those visitors are not told they have no wallet.
     const legacy = window.setTimeout(() => {
       const injected = (window as { ethereum?: Eip1193Provider }).ethereum;
       if (!injected) return;
       setWallets((current) =>
-        current.length
+        current.some((entry) => entry.rdns !== WALLETCONNECT_RDNS)
           ? current
           : [
+              ...current,
               {
                 uuid: "injected",
                 rdns: "injected",
@@ -338,6 +358,22 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     [active, remembered],
   );
 
+  const signMessage = useCallback(
+    async (message: string) => {
+      if (!active || !remembered) throw new Error("Connect a wallet first.");
+      const data = `0x${Array.from(new TextEncoder().encode(message), (b) => b.toString(16).padStart(2, "0")).join("")}`;
+      try {
+        return (await active.provider.request({
+          method: "personal_sign",
+          params: [data, remembered.address],
+        })) as string;
+      } catch (cause) {
+        throw new Error(describe(cause, "The wallet did not sign the message."));
+      }
+    },
+    [active, remembered],
+  );
+
   const disconnect = useCallback(() => {
     // Wallets that support it drop the site's permission too, so the next
     // connect asks again instead of reconnecting silently.
@@ -396,6 +432,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       connect,
       switchNetwork,
       sendTransaction,
+      signMessage,
       refreshBalance,
       disconnect,
       clearError,
@@ -412,6 +449,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       connect,
       switchNetwork,
       sendTransaction,
+      signMessage,
       refreshBalance,
       disconnect,
       clearError,
