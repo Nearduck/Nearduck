@@ -17,8 +17,8 @@ export const BRAND = {
   slogan: "The laziest duck on Robinhood Chain.",
   description:
     "Nearduck is a meme token on Robinhood Chain: a duck in an armchair, parked near the water, waiting for the market to float by.",
-  x: "https://x.com/nearduck",
-  xHandle: "@nearduck",
+  x: "https://x.com/nearduckxyz",
+  xHandle: "@nearduckxyz",
   github: "https://github.com/Nearduck/Nearduck",
   ca: CA,
 } as const;
